@@ -7,7 +7,7 @@ public class AsyncChain {
         Sequence one = new Sequence();
 
         // one task judgement
-        one.newSwitch(0)
+        one.registerSwitch(0)
                 .startAsyncJudgement(new Sequence.ImmediateTask() {
                     @Override
                     public void execute(Sequence.Controller c) {
@@ -41,7 +41,7 @@ public class AsyncChain {
                 .switchDone()
 
                 // Async chain
-                .newSwitch(1)
+                .registerSwitch(1)
                 .startAsyncJudgement(c -> {
                     // Async Task
                     c.returnCheckPass(one);
@@ -54,7 +54,7 @@ public class AsyncChain {
                     System.out.println("Switch 1 was refused.");
                 })
                 .switchDone()
-                .newSwitch(2)
+                .registerSwitch(2)
                 .startAsyncJudgement(c -> {
                     c.returnCheckPass(one);
                 })

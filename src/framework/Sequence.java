@@ -8,7 +8,7 @@ import java.util.Map;
 public class Sequence {
     private Map<Long, Controller> controllorMap = new HashMap<>();
 
-    public Switch newSwitch(long switchMark) {
+    public Switch registerSwitch(long switchMark) {
         Switch one = new Switch(this);
         Controller at = new Controller() {
 
@@ -32,12 +32,12 @@ public class Sequence {
         return one;
     }
 
-    private Controller getSwitchController(long switchMark) {
+    public Controller getController(long switchMark) {
         return this.controllorMap.get(switchMark);
     }
 
     public Sequence start(long switchMark, Object unique) {
-        Controller c = getSwitchController(switchMark);
+        Controller c = getController(switchMark);
         c.getSwitch().startAllImmediateTask(unique,c);
 
         return this;
@@ -174,6 +174,32 @@ public class Sequence {
         public Sequence switchDone() {
             return chain;
         }
+
+        private Map<String,List<String>> listBuf = new HashMap<>();
+        public void setStringList(String key, List<String> list){
+            listBuf.put(key, list);
+        }
+        public List<String> getStringList(String key){
+            return listBuf.get(key);
+        }
+
+        private Map<String,String> strBuf = new HashMap<>();
+        public void setString(String key, String value){
+            strBuf.put(key, value);
+        }
+        public String getString(String key){
+            return strBuf.get(key);
+        }
+
+        private Map<String, Object> objBuf = new HashMap<>();
+        public void setObject(String key, Object value){
+            objBuf.put(key, value);
+        }
+
+        public Object getObject(String key){
+            return objBuf.get(key);
+        }
+
     }
 
 
@@ -287,7 +313,7 @@ public class Sequence {
 
     private void example_text_method() {
         this
-                .newSwitch(0)
+                .registerSwitch(0)
                 .startAsyncJudgement(new ImmediateTask() {
                     @Override
                     public void execute(Controller c) {
