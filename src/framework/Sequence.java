@@ -1,257 +1,365 @@
+/**
+ * 用于单线程异步回调
+ * 典型场景Android {@link android.app.Activity}主任务调度
+ * Android：{@link android.app.Activity#startActivityForResult(android.content.Intent, int)}
+ * 或者
+ * Android：{@link android.app.Activity#requestPermissions(java.lang.String[], int)}。
+ * 典型特点
+ * 单个执行环境只存在一个线程，不存在多线程同时操作变量，不存在线程冲突，如果用多线程操作本{@link ws.toolbox.Sequence}
+ * 实例及相关操作会发生不可知结果，请注意。
+ */
+
 package framework;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+
+/**
+ * 异步执行注册中心，使用本框架执行步进可控的异步任务
+ * <ol>
+ *     <li>外部控制，应用于类似Android:Activity
+ *     #startActivityForResult(Intent, int)}的无法向异步API传委托的场景</li>
+ *     <li>内部串联，应用于异步控制流（可以传参委托，在委托中利用{@link Controller}
+ *     相关API返回判定结果）</li>
+ * </ol>
+ */
 public class Sequence {
     private Map<Long, Controller> controllorMap = new HashMap<>();
 
-    public Switch registerSwitch(long switchMark) {
-        Switch one = new Switch(this);
-        Controller at = new Controller() {
+    /**
+     * 在Sequence中注册一个{@link Switch}实例
+     *
+     * @param switchMark {@link Switch}唯一标识
+     * @param judgement  {@link Switch}指定判定条件
+     * @return 自身
+     */
+    public Sequence registerSwitch(long switchMark, ImmediateTask judgement) {
+        if (controllorMap.containsKey(switchMark)) {
+            DuplicateException e = new DuplicateException("重复注册switchMark<" + switchMark + ">");
+            this.getSwitch(switchMark).processExceptionCatch(null, e);
+            return this;
+        }
+
+        Controller ctrl = new Controller() {
+            private Switch target = new Switch(Sequence.this);
+
+            @Override
+            public Sequence start(Object unique) {
+                target.startImmediate(unique, this);
+                return Sequence.this;
+            }
 
             @Override
             public Switch getSwitch() {
-                return one;
+                return target;
             }
 
             @Override
             public void returnCheckPass(Object unique) {
-                one.processCheckPassed(unique);
+                target.processCheckPass(unique);
             }
 
             @Override
             public void returnRefuse(Object unique) {
-                one.processRefused(unique);
+                target.processRefuse(unique, target);
             }
         };
 
-        controllorMap.put(switchMark, at);
-        return one;
-    }
-
-    public Controller getController(long switchMark) {
-        return this.controllorMap.get(switchMark);
-    }
-
-    public Sequence start(long switchMark, Object unique) {
-        Controller c = getController(switchMark);
-        c.getSwitch().startAllImmediateTask(unique,c);
+        ctrl.getSwitch().setImmediateTask(judgement);
+        this.controllorMap.put(switchMark, ctrl);
 
         return this;
     }
 
+    /**
+     * 通过switchMark获取指定{@link Switch}的关联{@link Controller}
+     *
+     * @param switchMark {@link Switch}标识
+     * @return {@link Switch}实例关联{@link Controller}
+     */
+    public Controller getController(long switchMark) {
+        return this.controllorMap.get(switchMark);
+    }
+
+    /**
+     * 通过switchMark获取指定{@link Switch}实例
+     *
+     * @param switchMark {@link Switch}标识
+     * @return {@link Switch}实例
+     */
+    public Switch getSwitch(long switchMark) {
+        if (controllorMap.get(switchMark)==null)
+            return null;
+        else
+            return controllorMap.get(switchMark).getSwitch();
+    }
 
 
-    // ==============================================================================
-
-
+    /**
+     * 配置实体
+     */
     public class Switch {
         private final Sequence chain;
-        private Map<Object, Boolean> stateMap = new HashMap<>();
 
         private Switch(Sequence chain) {
             this.chain = chain;
         }
 
 
-        private List<ImmediateTask> immediateList = new ArrayList<>();
+        private ImmediateTask judgement = null;
 
-        public Switch startAsyncJudgement(ImmediateTask asyncExecutor) {
-            immediateList.add(asyncExecutor);
-            return this;
+        private void setImmediateTask(ImmediateTask task) {
+            judgement = task;
         }
 
+        private final List<Object> unique_keys = new ArrayList<>();
 
-        private List<GenericTask> checkpassed = new ArrayList<>();
+        private void startImmediate(Object unique, Controller c) {
+            unique_keys.add(unique);
 
-        public Switch setCheckPassed(GenericTask executor) {
-            checkpassed.add(executor);
-            return this;
-        }
-
-
-        private List<GenericTask> refused = new ArrayList<>();
-
-        public Switch setRefused(GenericTask executor) {
-            refused.add(executor);
-            return this;
-        }
-
-
-        private List<CatchHandle> catchIns = new ArrayList<>();
-
-        public Switch setCatch(CatchHandle ins) {
-            catchIns.add(ins);
-            return this;
-        }
-
-
-        private List<GenericTask> finallyTasks = new ArrayList<>();
-
-        public Switch setFinally(GenericTask executor) {
-            finallyTasks.add(executor);
-            return this;
-        }
-
-        private void startAllImmediateTask(Object unique, Controller c){
             try {
-                if (stateMap.containsKey(unique))
-                    throw new DuplicateException(null);
-                stateMap.put(unique, true);
-
-                for (ImmediateTask task:immediateList){
-                    task.execute(c);
-                }
-
-            } catch (SequenceExp e) {
+                judgement.execute(c);
+            } catch (Exception e) {
                 if (catchIns.isEmpty())
                     e.printStackTrace();
-                else {
-                    for (CatchHandle ins : catchIns) {
-                        ins.catchException(e, this);
-                    }
-                }
-            }
+                else
+                    processExceptionCatch(unique, e);
 
-            for (GenericTask fi : finallyTasks) {
-                fi.execute(this);
+                processFinally(unique);
             }
         }
 
-        private void processCheckPassed(Object unique) {
+
+        private Map<Object, List<GenericTask>> checkPassed = new HashMap<>();
+
+        /**
+         * 向本{@link Switch}增添CheckPass配置
+         *
+         * @param unique unique-key
+         * @param task   {@link GenericTask}实例
+         * @return 自身引用
+         */
+        public Switch appendCheckPass(Object unique, GenericTask task) {
+            if (checkPassed.get(unique) == null)
+                checkPassed.put(unique, new ArrayList<>());
+            checkPassed.get(unique).add(task);
+            return this;
+        }
+
+        private void processCheckPass(Object unique) {
             try {
-                if (stateMap.get(unique) == null)
-                    throw new MismatchException(null);
-                stateMap.remove(unique);
+                if (!unique_keys.contains(unique))
+                    throw new MismatchException("指定了未注册unique-key");
+
+                List<GenericTask> tasks = checkPassed.get(unique);
+                if (tasks != null){
+                    for (GenericTask task : tasks) {
+                        task.execute(this);
+                    }
+                }
+            } catch (Exception e) {
+                if (catchIns.isEmpty()) {
+                    e.printStackTrace();
+                } else {
+                    processExceptionCatch(unique, e);
+                }
+            }
+
+            processFinally(unique);
+        }
 
 
-                for (GenericTask task : checkpassed) {
+        private Map<Object, List<GenericTask>> refused = new HashMap<>();
+
+        /**
+         * 向本实例添加Refust配置
+         *
+         * @param unique unique-key
+         * @param task   {@link GenericTask}实例
+         * @return 自身引用
+         */
+        public Switch appendRefuse(Object unique, GenericTask task) {
+            if (!refused.containsKey(unique))
+                refused.put(unique, new ArrayList<>());
+            refused.get(unique).add(task);
+            return this;
+        }
+
+        private void processRefuse(Object unique, Switch s) {
+            try {
+                if (!unique_keys.contains(unique))
+                    throw new MismatchException("指定了未注册unique-key");
+
+                List<GenericTask> tasks = checkPassed.get(unique);
+                if (tasks != null){
+                    for (GenericTask task : tasks) {
+                        task.execute(this);
+                    }
+                }
+            } catch (Exception e) {
+                if (catchIns.isEmpty()) {
+                    e.printStackTrace();
+                } else {
+                    processExceptionCatch(unique, e);
+                }
+            }
+
+            processFinally(unique);
+        }
+
+
+        private Map<Object, List<CatchHandle>> catchIns = new HashMap<>();
+
+        public Switch appendExceptionCatch(Object unique, CatchHandle catchHandle) {
+            if (!catchIns.containsKey(unique))
+                catchIns.put(unique, new ArrayList<>());
+            catchIns.get(unique).add(catchHandle);
+            return this;
+        }
+
+        /**
+         * 利用内部存储{@link CatchHandle}处理传入异常
+         *
+         * @param unique 指定unique-key，指定处理器类型，若为null，则调用全部处理器
+         * @param e      异常
+         */
+        private void processExceptionCatch(Object unique, Exception e) {
+            List<CatchHandle> catchs = new ArrayList<>();
+            if (unique == null) {
+                Collection<List<CatchHandle>> autos = catchIns.values();
+                if (autos != null){
+                    for (List<CatchHandle> items : autos) {
+                        catchs.addAll(items);
+                    }
+                }
+            } else {
+                if (catchIns.containsKey(unique)){
+                    catchs.addAll(catchIns.get(unique));
+                }
+            }
+
+            for (CatchHandle catc : catchs) {
+                catc.catchException(e, this);
+            }
+        }
+
+
+        private Map<Object, List<GenericTask>> finallyTasks = new HashMap<>();
+
+        /**
+         * 向本{@link Switch}添加Finally配置
+         *
+         * @param unique unique-key
+         * @param task   {@link GenericTask}实例
+         * @return 自身引用
+         */
+        public Switch appendFinally(Object unique, GenericTask task) {
+            if (!finallyTasks.containsKey(unique))
+                finallyTasks.put(unique, new ArrayList<>());
+            finallyTasks.get(unique).add(task);
+            return this;
+        }
+
+        private void processFinally(Object unique) {
+            if (finallyTasks.containsKey(unique)){
+                List<GenericTask> tasks = finallyTasks.get(unique);
+                for (GenericTask task : tasks) {
                     task.execute(this);
                 }
-            } catch (SequenceExp e) {
-                if (catchIns.isEmpty())
-                    e.printStackTrace();
-                else {
-                    for (CatchHandle ins : catchIns) {
-                        ins.catchException(e, this);
-                    }
-                }
             }
 
-            for (GenericTask fi : finallyTasks) {
-                fi.execute(this);
-            }
+            // clear switch content
+            unique_keys.remove(unique);
+            checkPassed.remove(unique);
+            refused.remove(unique);
+            catchIns.remove(unique);
+            finallyTasks.remove(unique);
         }
 
-        private void processRefused(Object unique) {
-            try {
-                if (stateMap.get(unique) == null)
-                    throw new MismatchException(null);
-                stateMap.remove(unique);
-
-
-                for (GenericTask task : refused) {
-                    task.execute(this);
-                }
-            } catch (SequenceExp e) {
-                if (catchIns.isEmpty())
-                    e.printStackTrace();
-                else {
-                    for (CatchHandle ins : catchIns) {
-                        ins.catchException(e, this);
-                    }
-                }
-            }
-
-            for (GenericTask fi : finallyTasks) {
-                fi.execute(this);
-            }
-        }
-
-        public Sequence switchDone() {
+        /**
+         * 完成{@link Switch}配置
+         *
+         * @return 所属{@link Sequence}实例
+         */
+        public Sequence switchComplete() {
             return chain;
         }
 
-        private Map<String,List<String>> listBuf = new HashMap<>();
-        public void setStringList(String key, List<String> list){
+
+        private Map<String, List<String>> listBuf = new HashMap<>();
+
+        public void putStringList(String key, List<String> list) {
             listBuf.put(key, list);
         }
-        public List<String> getStringList(String key){
+
+        public List<String> getStringList(String key) {
             return listBuf.get(key);
         }
 
-        private Map<String,String> strBuf = new HashMap<>();
-        public void setString(String key, String value){
+
+        private Map<String, String> strBuf = new HashMap<>();
+
+        public void putString(String key, String value) {
             strBuf.put(key, value);
         }
-        public String getString(String key){
+
+        public String getString(String key) {
             return strBuf.get(key);
         }
 
+
         private Map<String, Object> objBuf = new HashMap<>();
-        public void setObject(String key, Object value){
+
+        public void putObject(String key, Object value) {
             objBuf.put(key, value);
         }
 
-        public Object getObject(String key){
+        public Object getObject(String key) {
             return objBuf.get(key);
         }
-
     }
 
 
-    /**
-     * <h1>异步立即执行任务</h1>
-     * 输入{@link Switch#startAsyncJudgement(ImmediateTask)}，任务立即执行，然后返回。<br/>
-     * 异步任务需要写在{@link ImmediateTask#execute(Controller)} 中作为请调方
-     * 当异步任务返回结果，在异步回调函数中操作{@link Controller#returnCheckPass(Object)}
-     * 或者{@link Controller#returnRefuse(Object)}返回状态，以继续执行指定{@link Switch}余下的过程。
-     */
     public interface ImmediateTask {
-        /**
-         * 任务入口点
-         * @param c 关联{@link Controller}，内含用于接力的{@link Switch}实例
-         */
         void execute(Controller c);
     }
 
-    /**
-     * <h1>通用任务</h1>
-     * 多种函数中当做回调委托，调用方通过{@link Switch}提供接力数据传递
-     */
     public interface GenericTask {
         /**
          * 任务入口点
+         *
          * @param s 关联{@link Switch}
          */
         void execute(Switch s);
     }
 
-    /**
-     * <h1>{@link Switch}判定控制器</h1>
-     * 用于控制{@link Switch}的运行。
-     * 在{@link Switch#startAsyncJudgement(ImmediateTask)}方法中返回{@link Controller#returnCheckPass(Object)}或者
-     * {@link Controller#returnRefuse(Object)}状态判定，以接续指定{@link Switch}判定运行。
-     * 中间结果考虑存储到{@link Switch}实例上
-     */
     public interface Controller {
+
+        /**
+         * 通过指定unique-key启动{@link Switch}
+         *
+         * @param unique unique-key，用于批次验证，如果出现
+         * @return 返回从属Sequence
+         */
+        Sequence start(Object unique);
+
         /**
          * 返回{@link Controller}关联的{@link Switch}实例
+         *
          * @return {@link Switch}实例
          */
         Switch getSwitch();
 
         /**
          * 返回判定状态接受（是、真）
+         *
          * @param unique 任务区分标识
          */
         void returnCheckPass(Object unique);
 
         /**
          * 返回判定状态拒绝（否、假）
+         *
          * @param unique 任务区分标识
          */
         void returnRefuse(Object unique);
@@ -261,17 +369,17 @@ public class Sequence {
      * 异常捕获实体
      */
     public interface CatchHandle {
-        void catchException(SequenceExp e, Switch aSwitch);
+        void catchException(Exception e, Switch aSwitch);
     }
 
     /**
      * 通用异常类型
      */
-    public class SequenceExp extends Exception {
+    public class SequenceException extends Exception {
         private final String shortMessage;
         private final Exception origin;
 
-        public SequenceExp(String shortMessage, Exception origin) {
+        public SequenceException(String shortMessage, Exception origin) {
             this.shortMessage = shortMessage;
             this.origin = origin;
         }
@@ -287,69 +395,81 @@ public class Sequence {
 
     /**
      * 特定异常：{@link Switch}绑定与判定unique-key不匹配异常
-     * <li>可能由于{@link Controller#returnRefuse(Object)}等函数返回了不匹配unique-key造成。</li>
+     * <li>可能由于{@link Controller#returnRefuse(Object)}等函数返回了不存在记录的unique-key。</li>
      */
-    public class MismatchException extends SequenceExp {
-        public MismatchException(Exception origin) {
-            super("对指定Switch基于指定unique key进行了重复判定", origin);
+    public class MismatchException extends SequenceException {
+        public MismatchException(String shortMsg) {
+            super(shortMsg, null);
         }
     }
 
     /**
-     * 同一时间内，指定{@link Switch}多次绑定同一unique-key错误
-     * <li>该{@link Switch}中指定unique-key存在未完成判定</li>
+     * 特定异常：多个{@link Switch}的重复绑定同一个switchMark
      */
-    public class DuplicateException extends SequenceExp{
-        public DuplicateException(Exception origin){
-            super("多次添加同一unique-key",origin);
+    public class DuplicateException extends SequenceException {
+
+        public DuplicateException(String shotMsg) {
+            super(shotMsg, null);
         }
     }
 
 
-
-
-
-
-
     private void example_text_method() {
-        this
-                .registerSwitch(0)
-                .startAsyncJudgement(new ImmediateTask() {
-                    @Override
-                    public void execute(Controller c) {
-                        c.returnRefuse(Sequence.this);      // 拒绝继续串行执行
-                        c.returnCheckPass(Sequence.this);   // 继续串行执行
-                    }
+
+        this    // 注册新判定
+                .registerSwitch(0, c -> {
                 })
-                .setCheckPassed(new GenericTask() {
-                    @Override
-                    public void execute(Switch s) {
-                        System.out.println("CheckedPassed");
-                    }
+                .registerSwitch(1, c -> {
                 })
-                .setRefused(new GenericTask() {
+                .registerSwitch(2, c -> {
+                })
+                .registerSwitch(3, c -> {
+                })
+
+
+                .getSwitch(0)
+                .appendCheckPass(new Object(), new GenericTask() {
                     @Override
                     public void execute(Switch s) {
-                        System.out.println("Refused");
+
                     }
                 })
-                .setCatch(new CatchHandle() {
-                    @Override
-                    public void catchException(SequenceExp e, Switch aSwitch) {
-                        System.out.println("Catched");
-                    }
-                })
-                .setFinally(new GenericTask() {
+                .appendRefuse(new Object(), new GenericTask() {
                     @Override
                     public void execute(Switch s) {
-                        System.out.println("finally");
+
                     }
                 })
-                .switchDone()
-                .start(0, Sequence.this);
+                .appendExceptionCatch(new Object(), new CatchHandle() {
+                    @Override
+                    public void catchException(Exception e, Switch aSwitch) {
+
+                    }
+                })
+                .appendFinally(new Object(), new GenericTask() {
+                    @Override
+                    public void execute(Switch s) {
+
+                    }
+                })
+                .switchComplete()
+
+
+                .getSwitch(1)
+                .appendCheckPass(new Object(), s -> {
+
+                })
+                .switchComplete()
+                .getController(1).start(new Object())
+                .getController(0).start(new Object());
+
+
+        // 执行任务
+        this.getController(0).start(new Object());
 
 
     }
+
     public static void main(String[] args) {
         Sequence chain = new Sequence();
 

@@ -7,70 +7,56 @@ public class AsyncChain {
         Sequence one = new Sequence();
 
         // one task judgement
-        one.registerSwitch(0)
-                .startAsyncJudgement(new Sequence.ImmediateTask() {
+        one.registerSwitch(0, new Sequence.ImmediateTask() {
+            @Override
+            public void execute(Sequence.Controller c) {
+                c.returnCheckPass(c);
+            }
+        })
+                .getSwitch(0)
+                .appendCheckPass(one.getController(0), new Sequence.GenericTask() {
+                    @Override
+                    public void execute(Sequence.Switch s) {
+                        System.out.println("switch 0 was check passed");
+                    }
+                })
+                .appendRefuse(one.getController(0), new Sequence.GenericTask() {
+                    @Override
+                    public void execute(Sequence.Switch s) {
+                        System.out.println("switch 0 was refused.");
+                    }
+                })
+                .switchComplete()
+
+                // Async chain
+                .registerSwitch(1, new Sequence.ImmediateTask() {
                     @Override
                     public void execute(Sequence.Controller c) {
                         c.returnCheckPass(one);
                     }
                 })
-                .setCheckPassed(new Sequence.GenericTask() {
-                    @Override
-                    public void execute(Sequence.Switch s) {
-                        System.out.println("It was check passed.");
-                    }
+                .getSwitch(1)
+                .appendCheckPass(one, s -> {
+                    one.getController(2).start(one);
+                    System.out.println("switch 1 was checkpassd.");
                 })
-                .setRefused(new Sequence.GenericTask() {
-                    @Override
-                    public void execute(Sequence.Switch s) {
-                        System.out.println("It was refused.");
-                    }
-                })
-                .setCatch(new Sequence.CatchHandle() {
-                    @Override
-                    public void catchException(Sequence.SequenceExp e, Sequence.Switch aSwitch) {
-                        System.out.println("Catach one exception");
-                    }
-                })
-                .setFinally(new Sequence.GenericTask() {
-                    @Override
-                    public void execute(Sequence.Switch s) {
+                .appendRefuse(one, s -> System.out.println("Switch 1 was refused."))
+                .switchComplete()
 
-                    }
-                })
-                .switchDone()
 
-                // Async chain
-                .registerSwitch(1)
-                .startAsyncJudgement(c -> {
-                    // Async Task
-                    c.returnCheckPass(one);
+                .registerSwitch(2, c -> {
+                    c.returnRefuse(one);
                 })
-                .setCheckPassed((s) -> {
-                    System.out.println("Switch 1 was check passed.");
-                    s.switchDone().start(2, one);
-                })
-                .setRefused(s -> {
-                    System.out.println("Switch 1 was refused.");
-                })
-                .switchDone()
-                .registerSwitch(2)
-                .startAsyncJudgement(c -> {
-                    c.returnCheckPass(one);
-                })
-                .setCheckPassed(s -> {
-                    System.out.println("Switch 2 was check passed.");
-                })
-                .switchDone()
+                .getSwitch(2)
+                .appendRefuse(one, s -> System.out.println("Switch 2 was refused."))
+                .appendCheckPass(one, s -> System.out.println("Switch 2 was check passed."))
+                .switchComplete()
 
-                // 启动指定“独立switch-0”
-                .start(0, one)
-                // 启动异步链“switch-1-2”
-                .start(1, one)
-                // 再启动异步链“switch-1-2”
-                .start(1,one);
+                .getController(0).start(one.getController(0))
+                .getController(1).start(one)
+                .getController(2).start(one);
 
         // unique-key 不匹配测试
-        one.start(1, new Object());
+        one.getController(1).start(new Object());
     }
 }

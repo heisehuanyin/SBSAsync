@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e305dd2c-253c-4ae7-a069-c2901718e20c" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/markdown-exported-files.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/framework/Sequence.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/framework/Sequence.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/framework/testExample/AsyncChain.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/framework/testExample/AsyncChain.java" afterDir="false" />
@@ -19,8 +19,22 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/framework/Sequence.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-45">
-              <caret column="14" lean-forward="true" selection-start-column="14" selection-end-column="14" />
+            <state relative-caret-position="1137">
+              <caret line="193" column="27" selection-start-line="193" selection-start-column="27" selection-end-line="193" selection-end-column="27" />
+              <folding>
+                <element signature="n#!!doc" expanded="true" />
+                <element signature="method#startImmediate#0;class#Switch#0;class#Sequence#0" />
+                <element signature="method#appendRefuse#0;class#Switch#0;class#Sequence#0" />
+                <element signature="method#appendExceptionCatch#0;class#Switch#0;class#Sequence#0" />
+                <element signature="method#appendFinally#0;class#Switch#0;class#Sequence#0" />
+                <element signature="class#ImmediateTask#0;class#Sequence#0" />
+                <element signature="class#GenericTask#0;class#Sequence#0" />
+                <element signature="class#Controller#0;class#Sequence#0" />
+                <element signature="class#CatchHandle#0;class#Sequence#0" />
+                <element signature="class#SequenceException#0;class#Sequence#0" />
+                <element signature="class#MismatchException#0;class#Sequence#0" />
+                <element signature="class#DuplicateException#0;class#Sequence#0" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -28,8 +42,18 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/framework/testExample/AsyncChain.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="123">
-              <caret line="16" column="60" lean-forward="true" selection-start-line="16" selection-start-column="60" selection-end-line="16" selection-end-column="60" />
+            <state relative-caret-position="318">
+              <caret line="40" column="64" selection-start-line="40" selection-start-column="64" selection-end-line="40" selection-end-column="64" />
+              <folding>
+                <element signature="e#339#340#0" expanded="true" />
+                <element signature="e#390#391#0" expanded="true" />
+                <element signature="e#607#608#0" expanded="true" />
+                <element signature="e#675#676#0" expanded="true" />
+                <element signature="e#887#888#0" expanded="true" />
+                <element signature="e#944#945#0" expanded="true" />
+                <element signature="e#1218#1219#0" expanded="true" />
+                <element signature="e#1285#1286#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -78,6 +102,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
@@ -101,12 +126,11 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1567652603823" />
-    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
+    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
   </component>
   <component name="RecentsManager">
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
@@ -184,7 +208,7 @@
       <window_info id="UI Designer" order="2" />
       <window_info id="Capture Tool" order="3" />
       <window_info id="Favorites" order="4" side_tool="true" />
-      <window_info content_ui="combo" id="Project" order="5" sideWeight="0.49936306" visible="true" weight="0.23590505" />
+      <window_info content_ui="combo" id="Project" order="5" sideWeight="0.49936306" visible="true" weight="0.23887241" />
       <window_info id="Structure" order="6" sideWeight="0.50063694" weight="0.23293768" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.3299363" />
@@ -215,15 +239,39 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/src/framework/Sequence.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-45">
-          <caret column="14" lean-forward="true" selection-start-column="14" selection-end-column="14" />
+        <state relative-caret-position="1137">
+          <caret line="193" column="27" selection-start-line="193" selection-start-column="27" selection-end-line="193" selection-end-column="27" />
+          <folding>
+            <element signature="n#!!doc" expanded="true" />
+            <element signature="method#startImmediate#0;class#Switch#0;class#Sequence#0" />
+            <element signature="method#appendRefuse#0;class#Switch#0;class#Sequence#0" />
+            <element signature="method#appendExceptionCatch#0;class#Switch#0;class#Sequence#0" />
+            <element signature="method#appendFinally#0;class#Switch#0;class#Sequence#0" />
+            <element signature="class#ImmediateTask#0;class#Sequence#0" />
+            <element signature="class#GenericTask#0;class#Sequence#0" />
+            <element signature="class#Controller#0;class#Sequence#0" />
+            <element signature="class#CatchHandle#0;class#Sequence#0" />
+            <element signature="class#SequenceException#0;class#Sequence#0" />
+            <element signature="class#MismatchException#0;class#Sequence#0" />
+            <element signature="class#DuplicateException#0;class#Sequence#0" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/framework/testExample/AsyncChain.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="123">
-          <caret line="16" column="60" lean-forward="true" selection-start-line="16" selection-start-column="60" selection-end-line="16" selection-end-column="60" />
+        <state relative-caret-position="318">
+          <caret line="40" column="64" selection-start-line="40" selection-start-column="64" selection-end-line="40" selection-end-column="64" />
+          <folding>
+            <element signature="e#339#340#0" expanded="true" />
+            <element signature="e#390#391#0" expanded="true" />
+            <element signature="e#607#608#0" expanded="true" />
+            <element signature="e#675#676#0" expanded="true" />
+            <element signature="e#887#888#0" expanded="true" />
+            <element signature="e#944#945#0" expanded="true" />
+            <element signature="e#1218#1219#0" expanded="true" />
+            <element signature="e#1285#1286#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
