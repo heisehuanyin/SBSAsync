@@ -1,0 +1,10 @@
+<!ELEMENT store (page*)>
+<!ELEMENT page (list-node*, map-node*)>
+<!ELEMENT list-node (value-store*)>
+<!ATTLIST list-node name CDATA #REQUIRED>
+<!ELEMENT value-store EMPTY>
+<!ATTLIST value-store name CDATA #IMPLIED>
+<!ATTLIST value-store value CDATA #REQUIRED>
+<!ELEMENT map-node (value-store*)>
+<!ATTLIST map-node name CDATA #REQUIRED>
+<!ATTLIST page id ID #REQUIRED>
