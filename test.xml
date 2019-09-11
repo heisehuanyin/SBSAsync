@@ -1,19 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?><!DOCTYPE store SYSTEM "format.dtd">
 <store>
     <page id="about">
-        <list-node name="content">
-            <value-store value="String-0"/>
-            <value-store value="String-1"/>
-            <value-store value="String-2"/>
-            <value-store value="String-3"/>
-            <value-store value="String-4"/>
-        </list-node>
-        <map-node name="maps">
-            <value-store name="key1" value="value1"/>
-            <value-store name="key2" value="value2"/>
-            <value-store name="key0" value="value0"/>
-            <value-store name="key3" value="value3"/>
-            <value-store name="key4" value="value4"/>
-        </map-node>
+        <list-node name="content"><value-store value="String-0"/><value-store value="String-1"/><value-store value="String-2"/><value-store value="String-3"/><value-store value="String-4"/></list-node>
+        <map-node name="maps"><value-store name="key1" value="value1"/><value-store name="key2" value="value2"/><value-store name="key0" value="value0"/><value-store name="key3" value="value3"/><value-store name="key4" value="value4"/></map-node>
     </page>
 </store>

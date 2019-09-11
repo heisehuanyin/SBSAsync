@@ -274,6 +274,10 @@ public class Sequence {
             refused.remove(unique);
             catchIns.remove(unique);
             finallyTasks.remove(unique);
+
+            listBuf.clear();
+            strBuf.clear();
+            objBuf.clear();
         }
 
         /**

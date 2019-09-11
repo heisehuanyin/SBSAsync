@@ -28,6 +28,5 @@ public class XMLStoreTest {
         a.putStringMap("maps", ab);
         m.save();
 
-
     }
 }
