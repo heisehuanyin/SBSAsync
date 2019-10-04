@@ -32,6 +32,16 @@ public class StreamQueue {
             return target;
         }
 
+        public int bindMark(){
+            var set = target.con.controllerMap.keySet();
+            for (var key : set){
+                if (target.con.controllerMap.get(key)==this){
+                    return key;
+                }
+            }
+            throw new RuntimeException("运行时错误：丢失必要信息。");
+        }
+
         public void checkPass() {
             state = PromiseState.CONTINUE;
             target.processOneTasks(this);
@@ -53,7 +63,7 @@ public class StreamQueue {
         BREAK
     }
 
-    static class Group<T1, T2, T3> {
+    private static class Group<T1, T2, T3> {
         private T1 first;
         private T2 second;
         private T3 third;
